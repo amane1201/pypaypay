@@ -1,0 +1,1590 @@
+{
+  "bff/v1/acceptP2PRequestMoney": {
+    "method": "POST",
+    "body": [],
+    "query": [],
+    "dto": "UserDefinedLimitInfoDTO"
+  },
+  "bff/v1/acceptP2PSendMoney": {
+    "method": "POST",
+    "body": [
+      "channelUrl",
+      "messageId",
+      "orderId",
+      "requestId"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/agreeSimilarTransaction": {
+    "method": "POST",
+    "body": [
+      "paymentCodeSessionId",
+      "agreeSimilarTransactionFlag"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/agreeToPrivacyPolicy": {
+    "method": "POST",
+    "body": [
+      "version",
+      "autoAcceptTermsOfUse"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/authorizePassword": {
+    "method": "POST",
+    "body": [
+      "type",
+      "password"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/calculateMynaSendApplyInfo": {
+    "method": "POST",
+    "body": [],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/cancelP2PRequestMoney": {
+    "method": "POST",
+    "body": [
+      "channelUrl",
+      "messageId",
+      "requestId",
+      "requestMoneyId"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/cancelP2PSendMoney": {
+    "method": "POST",
+    "body": [
+      "channelUrl",
+      "messageId",
+      "orderId",
+      "requestId"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/changeAvatarImage": {
+    "method": "POST",
+    "body": [],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/changePaymentMethodState": {
+    "method": "POST",
+    "body": [
+      "paymentMethodId",
+      "state",
+      "paymentMethodType"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/changeSearchablePayPayId": {
+    "method": "POST",
+    "body": [
+      "searchablePayPayId"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/changeSearchablePhoneNumber": {
+    "method": "POST",
+    "body": [
+      "searchablePhoneNumber"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/changeUserProfile": {
+    "method": "POST",
+    "body": [
+      "nickName",
+      "firstName",
+      "lastName",
+      "firstNameKana",
+      "lastNameKana",
+      "firstNameRomaji",
+      "lastNameRomaji",
+      "dateOfBirth",
+      "gender"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/changeYconnect": {
+    "method": "POST",
+    "body": [
+      "sessionId",
+      "state",
+      "code"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/checkAuthActionForUserDefinedLimitUpdate": {
+    "method": "POST",
+    "body": [
+      "mode",
+      "dailyLimit",
+      "monthlyLimit"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/confirmAgeForCashback": {
+    "method": "POST",
+    "body": [
+      "year",
+      "month",
+      "date",
+      "orderId",
+      "orderType",
+      "campaignId"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/createOfflineOneTimeCodeConfig": {
+    "method": "POST",
+    "body": [
+      "userIdentitiesToken"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/createP2PCode": {
+    "method": "POST",
+    "body": [
+      "sessionId"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/createP2PUserSearchHistory": {
+    "method": "POST",
+    "body": [
+      "searchTerm"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/createPayPaySignInCode": {
+    "method": "POST",
+    "body": [
+      "clientId",
+      "redirectUrl",
+      "scope",
+      "state",
+      "approved"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/deleteNotificationThread": {
+    "method": "POST",
+    "body": [],
+    "query": [],
+    "dto": "DeleteNotificationThreadParameterDTO"
+  },
+  "bff/v1/deleteP2PUserSearchHistory": {
+    "method": "POST",
+    "body": [
+      "deleteSearchStatus",
+      "searchTerm"
+    ],
+    "query": [
+      "deleteSearchStatus"
+    ],
+    "dto": null
+  },
+  "bff/v1/deletePaymentMethod": {
+    "method": "POST",
+    "body": [
+      "paymentMethodId",
+      "paymentMethodType"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/deletePayoutMethod": {
+    "method": "POST",
+    "body": [
+      "payoutMethodId"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/deleteTemporaryMailAddress": {
+    "method": "POST",
+    "body": [
+      "externalProvider"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/followChannel": {
+    "method": "POST",
+    "body": [
+      "channelId",
+      "type"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/getATMTopupDisplayInfo": {
+    "method": "GET",
+    "body": [
+      "requestId",
+      "code"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/getAddressByZipcode": {
+    "method": "GET",
+    "body": [
+      "zipcode"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/getBalanceInfo": {
+    "method": "POST",
+    "body": [],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/getChannelDisplayInfo": {
+    "method": "GET",
+    "body": [
+      "lat",
+      "lon"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/getContinuousPaymentDisplayInfo": {
+    "method": "GET",
+    "body": [
+      "continuousPaymentId",
+      "paymentMethodId",
+      "paymentMethodType"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/getCreditCardRegistrationFailure": {
+    "method": "GET",
+    "body": [],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/getFeedList": {
+    "method": "GET",
+    "body": [
+      "type",
+      "pageNumber",
+      "lat",
+      "lon",
+      "id"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/getGVList": {
+    "method": "GET",
+    "body": [
+      "statusFilter",
+      "storeId",
+      "merchantId",
+      "idOffset",
+      "dateTimeOffset",
+      "pageSize"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/getKycDisplayInfo": {
+    "method": "GET",
+    "body": [
+      "requestKycTypes"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/getKycInputLists": {
+    "method": "GET",
+    "body": [
+      "inputLists"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/getKycNriAuthInfo": {
+    "method": "GET",
+    "body": [],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/getLocalizedString": {
+    "method": "POST",
+    "body": [],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/getLoginDevices": {
+    "method": "GET",
+    "body": [
+      "pageNumber",
+      "pageSize",
+      "authenticated"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/getNotificationCenterDisplayInfo": {
+    "method": "GET",
+    "body": [
+      "selectedTabId",
+      "requestStartTs",
+      "nextPageToken"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/getNriAuthInfo": {
+    "method": "GET",
+    "body": [],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/getOrderByOrderId": {
+    "method": "GET",
+    "body": [
+      "orderId",
+      "orderType",
+      "refundId",
+      "showToastMessage"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/getP2PMessage": {
+    "method": "POST",
+    "body": [],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/getP2PRequestOrder": {
+    "method": "POST",
+    "body": [],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/getP2PThemeList": {
+    "method": "GET",
+    "body": [
+      "type",
+      "group",
+      "isSecretEnvelope"
+    ],
+    "query": [
+      "feedId",
+      "themeId"
+    ],
+    "dto": null
+  },
+  "bff/v1/getP2PUserSearchHistory": {
+    "method": "GET",
+    "body": [],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/getPay2BalanceCancelledPendingCashBackHistory": {
+    "method": "GET",
+    "body": [
+      "pageSize",
+      "lastSequence"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/getPaymentDetailDisplayInfo": {
+    "method": "GET",
+    "body": [
+      "orderId",
+      "orderType",
+      "orderStatus",
+      "externalUserId",
+      "displayName",
+      "avatarImageUrl",
+      "merchantName",
+      "dateTime",
+      "totalAmount",
+      "merchantId",
+      "storeId",
+      "isEBillAutoPaymentEnabled",
+      "pids",
+      "mode",
+      "route",
+      "gvReferenceId",
+      "usingPaymentInfoV2"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/getPaymentHistoryFilterCondition": {
+    "method": "GET",
+    "body": [],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/getPaymentPreferences": {
+    "method": "POST",
+    "body": [],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/getPendingContinuousPaymentList": {
+    "method": "GET",
+    "body": [
+      "pageNumber",
+      "pageSize"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/getPreAuthDisplayInfo": {
+    "method": "GET",
+    "body": [
+      "orderId"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/getPreTransactionAutoTopupConfiguration": {
+    "method": "GET",
+    "body": [
+      "includePaymentMethodList"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/getReAuthDisplayInfo": {
+    "method": "GET",
+    "body": [
+      "internalRequestId",
+      "redirectUrl"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/getServiceStatus": {
+    "method": "GET",
+    "body": [],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/getSmartLoginSession": {
+    "method": "GET",
+    "body": [],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/getSoftbankLoginSession": {
+    "method": "GET",
+    "body": [
+      "display",
+      "redirectUrl"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/getSourceOrder": {
+    "method": "GET",
+    "body": [
+      "orderId",
+      "orderType",
+      "orderStatus",
+      "subOrderId"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/getTpointToken": {
+    "method": "GET",
+    "body": [],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/getUserProfile": {
+    "method": "GET",
+    "body": [
+      "includeSkinInfo",
+      "includeUserScore",
+      "includeBeginnerFlag",
+      "includeExternalProfileSync"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/getWalletWidgetInfo": {
+    "method": "POST",
+    "body": [],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/getYahooWalletToken": {
+    "method": "GET",
+    "body": [],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/getYconnectLoginSession": {
+    "method": "GET",
+    "body": [
+      "promptLogin"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/issueLesserTokenOTT": {
+    "method": "POST",
+    "body": [],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/likeFeed": {
+    "method": "POST",
+    "body": [
+      "feedId"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/linkSoftbank": {
+    "method": "POST",
+    "body": [
+      "sessionId",
+      "state",
+      "code",
+      "redirectUrl"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/linkYconnect": {
+    "method": "POST",
+    "body": [
+      "sessionId",
+      "state",
+      "code"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/makeAllTabsRead": {
+    "method": "POST",
+    "body": [],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/registerCreditCard": {
+    "method": "POST",
+    "body": [],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/registerKycInfo": {
+    "method": "POST",
+    "body": [],
+    "query": [],
+    "dto": "KYCAddressDTO"
+  },
+  "bff/v1/registerPayPayId": {
+    "method": "POST",
+    "body": [
+      "payPayId"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/rejectP2PRequestMoney": {
+    "method": "POST",
+    "body": [
+      "channelUrl",
+      "messageId",
+      "requestId",
+      "requestMoneyId",
+      "type",
+      "themeId",
+      "socketConnection"
+    ],
+    "query": [
+      "externalUserId",
+      "phoneNumber",
+      "search"
+    ],
+    "dto": null
+  },
+  "bff/v1/rejectP2PSendMoney": {
+    "method": "POST",
+    "body": [
+      "channelUrl",
+      "messageId",
+      "orderId",
+      "requestId"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/removeUserDefinedLimit": {
+    "method": "POST",
+    "body": [
+      "otpReferenceId",
+      "otp",
+      "mode"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/resendSms": {
+    "method": "POST",
+    "body": [
+      "otpReferenceId",
+      "type"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/saveBankStandingInstruction": {
+    "method": "POST",
+    "body": [
+      "requestId",
+      "payoutMethodId",
+      "accountOwnership",
+      "senderName"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/sendAuthorizeMail": {
+    "method": "POST",
+    "body": [
+      "mailAddress"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/sendCreditCardRegistrationFailure": {
+    "method": "POST",
+    "body": [],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/sendDeleteAccountSms": {
+    "method": "POST",
+    "body": [],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/sendForgetLink": {
+    "method": "POST",
+    "body": [],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/sendForgetMail": {
+    "method": "POST",
+    "body": [
+      "mailAddress"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/sendForgetSms": {
+    "method": "POST",
+    "body": [
+      "phoneNumber"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/sendOtpForUserDefinedLimits": {
+    "method": "POST",
+    "body": [],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/setPrioritizedPaymentMethod": {
+    "method": "POST",
+    "body": [
+      "paymentMethodType"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/setUserDefinedLimit": {
+    "method": "POST",
+    "body": [
+      "otpReferenceId",
+      "otp",
+      "mode",
+      "dailyLimit",
+      "monthlyLimit",
+      "isLimitTypeAlreadySet"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/setUserDefinedLimitType": {
+    "method": "POST",
+    "body": [
+      "limitType"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/shareFeed": {
+    "method": "POST",
+    "body": [
+      "type",
+      "group",
+      "isSecretEnvelope"
+    ],
+    "query": [
+      "feedId",
+      "themeId"
+    ],
+    "dto": null
+  },
+  "bff/v1/signOut": {
+    "method": "POST",
+    "body": [
+      "channelId"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/signOutAndDeleteAllDevices": {
+    "method": "POST",
+    "body": [],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/signOutAndDeleteDevice": {
+    "method": "POST",
+    "body": [
+      "deviceUUID",
+      "clientId"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/syncExternalUserProfile": {
+    "method": "POST",
+    "body": [
+      "externalProvider"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/unfollowChannel": {
+    "method": "POST",
+    "body": [
+      "channelId",
+      "type"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/unlikeFeed": {
+    "method": "POST",
+    "body": [
+      "feedId"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/unlinkSoftbank": {
+    "method": "POST",
+    "body": [],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/unlinkYconnect": {
+    "method": "POST",
+    "body": [],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/updateDeviceLockStatus": {
+    "method": "POST",
+    "body": [
+      "lockType",
+      "appSettingStatus"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/updateGvAutoSelectConfiguration": {
+    "method": "POST",
+    "body": [],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/updateNotificationStatus": {
+    "method": "POST",
+    "body": [],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/updateNotificationStatusBmsStore": {
+    "method": "POST",
+    "body": [],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/updateOpenPaymentClientStatus": {
+    "method": "POST",
+    "body": [
+      "userAuthorizationId",
+      "status",
+      "clientId"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/updatePreTransactionAutoTopupConfiguration": {
+    "method": "POST",
+    "body": [],
+    "query": [],
+    "dto": "UpdatePreTransactionAutoTopupConfigurationParameterDTO"
+  },
+  "bff/v1/updatePrioritizedPaymentMethodsConfiguration": {
+    "method": "POST",
+    "body": [],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/updateThreadMuteStatus": {
+    "method": "POST",
+    "body": [],
+    "query": [],
+    "dto": "UpdateThreadMuteStatusParameterDTO"
+  },
+  "bff/v1/updateTransactionMerchantNote": {
+    "method": "POST",
+    "body": [
+      "orderId",
+      "existingMerchantNote",
+      "newMerchantNote"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/validatePayPayId": {
+    "method": "POST",
+    "body": [
+      "payPayId"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/verifyKycInfo": {
+    "method": "POST",
+    "body": [
+      "idDocType",
+      "sessionId",
+      "eKycInfo"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v1/yconnectLogin": {
+    "method": "POST",
+    "body": [
+      "sessionId",
+      "state",
+      "code"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v2/acceptP2PSendMoneyLink": {
+    "method": "POST",
+    "body": [
+      "requestId",
+      "orderId",
+      "verificationCode",
+      "passcode",
+      "senderMessageId",
+      "senderChannelUrl"
+    ],
+    "query": [
+      "appContext"
+    ],
+    "dto": null
+  },
+  "bff/v2/bindPushNotificationDevice": {
+    "method": "POST",
+    "body": [
+      "channelId",
+      "fcmToken"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v2/check3dSecureStatus": {
+    "method": "POST",
+    "body": [
+      "paymentMethodId",
+      "type"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v2/executeP2PRequestMoney": {
+    "method": "POST",
+    "body": [
+      "theme",
+      "userComment",
+      "requestId",
+      "externalSenderId",
+      "source",
+      "cmsImageId",
+      "userCommentCreatorType",
+      "unblockReceiver",
+      "socketConnection"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v2/executeP2PSendMoneyLink": {
+    "method": "POST",
+    "body": [],
+    "query": [],
+    "dto": "UserDefinedLimitInfoDTO"
+  },
+  "bff/v2/executePreAuthPayment": {
+    "method": "POST",
+    "body": [
+      "requestId",
+      "requestAt",
+      "orderId",
+      "merchantId",
+      "currency"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v2/executeReAuthPayment": {
+    "method": "POST",
+    "body": [
+      "internalRequestId",
+      "currency",
+      "merchantId",
+      "orderId",
+      "redirectUrl"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v2/getAutoTopupConfiguration": {
+    "method": "GET",
+    "body": [
+      "includePaymentMethodList"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v2/getBarcodeInfo": {
+    "method": "GET",
+    "body": [
+      "code",
+      "paymentMethodId",
+      "paymentMethodType",
+      "secondaryPaymentMethodId",
+      "secondaryPaymentMethodType",
+      "usePayPayPoints",
+      "lastSelectedHomePaymentMethodId",
+      "lastSelectedHomePaymentMethodType",
+      "lineTicket",
+      "pointPaymentAmount",
+      "isScannedFromFile"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v2/getP2PLinkInfo": {
+    "method": "POST",
+    "body": [],
+    "query": [],
+    "dto": null
+  },
+  "bff/v2/getPay2BalanceHistory": {
+    "method": "GET",
+    "body": [
+      "lastSequence",
+      "pageSize"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v2/getPaymentCompletion": {
+    "method": "GET",
+    "body": [
+      "paymentCodeSessionId"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v2/getPaymentMethodList": {
+    "method": "GET",
+    "body": [
+      "type",
+      "transactionType",
+      "merchantId",
+      "productType",
+      "usePayPayPoints"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v2/getPaymentPreferences": {
+    "method": "GET",
+    "body": [],
+    "query": [],
+    "dto": null
+  },
+  "bff/v2/getPayoutDisplayInfo": {
+    "method": "GET",
+    "body": [],
+    "query": [],
+    "dto": null
+  },
+  "bff/v2/getPayoutInfo": {
+    "method": "GET",
+    "body": [
+      "payoutMethodId",
+      "mode"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v2/getPrioritizedPaymentMethodsConfiguration": {
+    "method": "GET",
+    "body": [
+      "onlyPreferredPaymentMethod"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v2/getProfileDisplayInfo": {
+    "method": "POST",
+    "body": [],
+    "query": [],
+    "dto": null
+  },
+  "bff/v2/getTopupDisplayInfo": {
+    "method": "GET",
+    "body": [],
+    "query": [],
+    "dto": null
+  },
+  "bff/v2/getWalletDisplayInfo": {
+    "method": "GET",
+    "body": [
+      "giftVoucherExpiryWithinDays",
+      "pfmWidgetVariant",
+      "usingPaymentInfoV2"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v2/oauth2/par": {
+    "method": "POST",
+    "body": [
+      "clientId",
+      "clientAppVersion",
+      "clientOsVersion",
+      "clientOsType",
+      "redirectUri",
+      "responseType",
+      "state",
+      "codeChallenge",
+      "codeChallengeMethod",
+      "scope",
+      "tokenVersion",
+      "prompt",
+      "uiLocales",
+      "referralCampaignCode"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v2/oauth2/token": {
+    "method": "POST",
+    "body": [
+      "clientId",
+      "redirectUri",
+      "code",
+      "codeVerifier"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v2/oauth2/token/exchange": {
+    "method": "POST",
+    "body": [
+      "refreshToken",
+      "destinationClientId",
+      "codeChallenge",
+      "codeVerifier",
+      "state"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v2/rejectP2PSendMoneyLink": {
+    "method": "POST",
+    "body": [
+      "requestId",
+      "orderId",
+      "verificationCode",
+      "senderMessageId",
+      "senderChannelUrl"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v2/updateAutoTopupConfiguration": {
+    "method": "POST",
+    "body": [],
+    "query": [],
+    "dto": "UpdateAutoTopupConfigurationParameterDTO"
+  },
+  "bff/v3/createPaymentOneTimeCode": {
+    "method": "POST",
+    "body": [],
+    "query": [],
+    "dto": "CreatePaymentOneTimeCodeParameterDTO"
+  },
+  "bff/v3/createPaymentOneTimeCodeForHome": {
+    "method": "POST",
+    "body": [],
+    "query": [],
+    "dto": "CreatePaymentOneTimeCodeForHomeParameterDTO"
+  },
+  "bff/v3/getOrderByOrderId": {
+    "method": "GET",
+    "body": [
+      "orderId",
+      "orderType",
+      "refundId",
+      "showToastMessage",
+      "productType"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v4/getCashBackResult": {
+    "method": "GET",
+    "body": [
+      "orderId",
+      "orderType",
+      "route",
+      "mode",
+      "merchantType",
+      "paymentMethodTypes",
+      "isPayPayCard",
+      "isCreditUser"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "bff/v4/getPaymentHistory": {
+    "method": "POST",
+    "body": [],
+    "query": [],
+    "dto": null
+  },
+  "kyc/v1/app/nri/auth": {
+    "method": "GET",
+    "body": [],
+    "query": [],
+    "dto": "NRIAuthInfoResponseDTO"
+  },
+  "p2p/v1/addP2PFriend": {
+    "method": "POST",
+    "body": [
+      "appContext"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "p2p/v1/assignGroupChatAdmin": {
+    "method": "POST",
+    "body": [],
+    "query": [],
+    "dto": "P2PAssignGroupChatAdminParameterDTO"
+  },
+  "p2p/v1/blockUser": {
+    "method": "POST",
+    "body": [
+      "externalId"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "p2p/v1/cancelGroupPay": {
+    "method": "POST",
+    "body": [
+      "splitBillId"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "p2p/v1/cancelRecurringTransfer": {
+    "method": "POST",
+    "body": [
+      "receiverExternalId"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "p2p/v1/changeP2PPhoneBookDiscoverability": {
+    "method": "POST",
+    "body": [
+      "phonebookDiscoverabilityFlag"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "p2p/v1/createChatInviteLink": {
+    "method": "POST",
+    "body": [],
+    "query": [],
+    "dto": "CreateChatInviteLinkParameterDTO"
+  },
+  "p2p/v1/createGroupInviteLink": {
+    "method": "POST",
+    "body": [
+      "chatRoomId"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "p2p/v1/createGroupPay": {
+    "method": "POST",
+    "body": [],
+    "query": [],
+    "dto": "P2PGroupPayParticipantDTO"
+  },
+  "p2p/v1/createP2PGroupChannel": {
+    "method": "POST",
+    "body": [
+      "appContext"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "p2p/v1/createP2PGroupInviteCode": {
+    "method": "POST",
+    "body": [
+      "chatRoomId"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "p2p/v1/createRecurringTransfer": {
+    "method": "POST",
+    "body": [
+      "requestId",
+      "receiverExternalId",
+      "userComment",
+      "startDate",
+      "endDate",
+      "scheduleType",
+      "unblockReceiver",
+      "socketConnection",
+      "themeId",
+      "ackPhoneCallDetected"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "p2p/v1/createStandingOrder": {
+    "method": "POST",
+    "body": [],
+    "query": [],
+    "dto": "CreateStandingOrderParameterDTO"
+  },
+  "p2p/v1/declineGroupPay": {
+    "method": "POST",
+    "body": [
+      "splitBillId"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "p2p/v1/getChatRoomHasMessageFromUser": {
+    "method": "GET",
+    "body": [
+      "chatRoomId",
+      "externalUserId"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "p2p/v1/getGroupChatMembers": {
+    "method": "GET",
+    "body": [
+      "pageSize",
+      "showSmartFunction"
+    ],
+    "query": [
+      "channelId",
+      "lastSequence"
+    ],
+    "dto": null
+  },
+  "p2p/v1/getGroupPay": {
+    "method": "GET",
+    "body": [
+      "splitBillId"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "p2p/v1/getGroupPayBanner": {
+    "method": "GET",
+    "body": [
+      "channelId"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "p2p/v1/getGroupPayList": {
+    "method": "GET",
+    "body": [
+      "page",
+      "size"
+    ],
+    "query": [
+      "channelId"
+    ],
+    "dto": null
+  },
+  "p2p/v1/getGroupPayPotentialParticipants": {
+    "method": "GET",
+    "body": [
+      "channelId"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "p2p/v1/getP2PFriends": {
+    "method": "GET",
+    "body": [
+      "pageSize"
+    ],
+    "query": [
+      "pageToken"
+    ],
+    "dto": null
+  },
+  "p2p/v1/getP2PGroupChatRoom": {
+    "method": "POST",
+    "body": [],
+    "query": [],
+    "dto": null
+  },
+  "p2p/v1/getP2PHomeContent": {
+    "method": "GET",
+    "body": [
+      "variation"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "p2p/v1/getP2PPhoneBookDiscoverability": {
+    "method": "GET",
+    "body": [],
+    "query": [],
+    "dto": null
+  },
+  "p2p/v1/getRecurringTransferInfo": {
+    "method": "GET",
+    "body": [
+      "receiverExternalId"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "p2p/v1/getUserInfoFromBarcode": {
+    "method": "GET",
+    "body": [
+      "code",
+      "appContext"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "p2p/v1/initialiseOneToOneAndLinkChatRoom": {
+    "method": "POST",
+    "body": [],
+    "query": [],
+    "dto": null
+  },
+  "p2p/v1/inviteP2PGroupChannel": {
+    "method": "POST",
+    "body": [],
+    "query": [],
+    "dto": null
+  },
+  "p2p/v1/isP2PUserFriend": {
+    "method": "GET",
+    "body": [
+      "externalUserId"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "p2p/v1/leaveP2PGroupChannel": {
+    "method": "POST",
+    "body": [],
+    "query": [],
+    "dto": null
+  },
+  "p2p/v1/payGroupPay": {
+    "method": "POST",
+    "body": [],
+    "query": [],
+    "dto": "UserDefinedLimitInfoDTO"
+  },
+  "p2p/v1/removeGroupChatMember": {
+    "method": "POST",
+    "body": [],
+    "query": [],
+    "dto": "P2PRemoveGroupChatAdminParameterDTO"
+  },
+  "p2p/v1/resendRecurringTransfer": {
+    "method": "POST",
+    "body": [],
+    "query": [],
+    "dto": "UserDefinedLimitInfoDTO"
+  },
+  "p2p/v1/resolveLink": {
+    "method": "GET",
+    "body": [
+      "type",
+      "code"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "p2p/v1/sendP2PMessage": {
+    "method": "POST",
+    "body": [],
+    "query": [],
+    "dto": null
+  },
+  "p2p/v1/unFriendP2PUser": {
+    "method": "POST",
+    "body": [
+      "externalUserId"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "p2p/v1/unblockUser": {
+    "method": "POST",
+    "body": [
+      "externalId"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "p2p/v1/unhideChannel": {
+    "method": "POST",
+    "body": [
+      "chatRoomId"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "p2p/v1/updateP2PFriendCustomName": {
+    "method": "POST",
+    "body": [
+      "friendExternalUserId",
+      "customDisplayName"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "p2p/v1/updateP2PGroupChannel": {
+    "method": "POST",
+    "body": [],
+    "query": [],
+    "dto": null
+  },
+  "p2p/v1/uploadP2PGroupIcon": {
+    "method": "POST",
+    "body": [],
+    "query": [],
+    "dto": null
+  },
+  "p2p/v2/getP2PInfo": {
+    "method": "GET",
+    "body": [
+      "channelUrl",
+      "messageId",
+      "requestId",
+      "requestMoneyId",
+      "type",
+      "themeId",
+      "socketConnection"
+    ],
+    "query": [
+      "externalUserId",
+      "phoneNumber",
+      "search"
+    ],
+    "dto": null
+  },
+  "p2p/v2/getPresetAmount": {
+    "method": "GET",
+    "body": [
+      "receiverExternalUserId"
+    ],
+    "query": [],
+    "dto": null
+  },
+  "p2p/v3/executeP2PSendMoney": {
+    "method": "POST",
+    "body": [],
+    "query": [],
+    "dto": "UserDefinedLimitInfoDTO"
+  },
+  "p2p/v3/searchP2PUser": {
+    "method": "POST",
+    "body": [
+      "searchTerm",
+      "pageToken",
+      "pageSize",
+      "isIngressSendMoney",
+      "searchTypes"
+    ],
+    "query": [],
+    "dto": null
+  }
+}
