@@ -1,162 +1,172 @@
-# paypy
+# pypaypay
 
-非公式 PayPay Python ラッパー。名前は「ペイパイ」でも「ペイピー」でも好きに呼んで。
-
-APK を jadx でカチ割って BFF (`app4.paypay.ne.jp`) の仕様を機械抽出したので、**エンドポイント 192 本 全部叩ける**。
-
-> ⚠️ 公式じゃないし公式サポートも無い。ToS 違反な自動化に使ったら普通に凍結されるので、**自分の口座に対する研究・自動化専用**にしてね。垢banされたら「どんまい」くらいしか言えないよ。
+PayPay の非公式 Python API ラッパーだよ
+**高レベル 28 メソッド / raw 192 エンドポイント** — アプリで出来ることはだいたい出来ると思う。
 
 ## インストール
 
-```bash
-# GitHub から直接(推奨)
-pip install git+https://github.com/amane1201/paypy
+```py
+pip install pypaypay
+```
 
-# ローカルで開発するなら
-git clone https://github.com/amane1201/paypy
-cd paypy
+依存は `httpx` だけ、軽いでしょ
+
+###### インストール名も import 名も `pypaypay`
+```py
+from pypaypay import PayPay
+```
+
+最新版を直で入れたい人はこっち：
+
+```py
+pip install git+https://github.com/amane1201/pypaypay
+```
+
+ローカルで弄りたい人はこっち：
+
+```py
+git clone https://github.com/amane1201/pypaypay
+cd pypaypay
 pip install -e .
-
 ```
 
-## ログインまわり
+## 始める前に確認すること
 
+### これは非公式です
+PayPay 株式会社とは縁もゆかりもありません、中の人でもなんでもない。
+非公式 API を叩くのは規約的にたぶんアウトなので、**自分のアカウントで、自己責任で**遊んでね。
+凍結されても「どんまい」って一緒に言うことしか出来ないよ。
 
-```python
-from paypy import PayPay
+### ログイン失敗は3回まで
+超えるとアカウントが一時ロックされる。解除はサポート送りなので、パスワードうろ覚えのまま試行錯誤するのは本当にやめとけ。3回だぞ、3回。
 
-# 1) 電話番号 + パスワードで新規デバイスログイン
-paypay = PayPay("090-1234-5678", "Gay1919")  # ハイフンはあってもなくてもいい
-url = paypay.login()                            # portal URL が返ってくる
-print("これブラウザで開いて:", url)
-paypay.login_confirm(input("URL?: "))            # コールバック URL でも AN-1201 だけでも OK
-print(paypay.access_token)                      # 90 日生きるやつ
-print(paypay.refresh_token)
-print(paypay.device_uuid)                       # 登録デバイス管理用
-print(paypay.client_uuid)                       # 特に気にしなくていい
+### セッションを作りすぎない
+毎回ログインし直すとセッションが積み上がってアカウント凍結の可能性があるっぽい。
+**トークンを保存して使い回して**、それだけで寿命が伸びる。
 
-# 2) 登録済みデバイス UUID を渡す(2 回目以降は URL 入力を省ける)
-paypay = PayPay("080-1234-5678", "Gay1919", "登録済みのデバイスUUID", proxy=None)
-paypay.login()
-print(paypay.access_token)
-# URL の入力は要らない
+### 日本からしかアクセスできない
+海外の VPS からだと普通に弾かれるので、その時はプロキシ挿して。
 
-# 3) アクセストークンだけ持ってるならログインまるごとスキップ
-paypay = PayPay(access_token="アクセストークン")
+### Bot 検知がいるらしい
+どうやらモバイル API には Bot 検知が存在するっぽくて、引っかかると勝手にログアウトさせられる。
+無駄なリクエストを混ぜると回避できるらしい（人間がアプリ触ってたら当然そこそこリクエストするので、それを真似る）。
+このモジュールなら `paypay.raw.get_user_profile()` あたりを時々叩いとけばそれっぽくなる。Bot は効率が良いから怪しまれるんだね……。
 
-# 90 日経ってトークン切れたら refresh
-paypay.token_refresh("ここにリフレッシュトークン")
-print(paypay.access_token)   # ← 更新後のやつが入ってる
-print(paypay.refresh_token)
-```
+## Let's Go!
 
-`proxy` は `dict` でも `str` でもいける。`str` は `http://` 省略可(`"host:8080"` でも OK)。
-`refresh_token` があれば 401 くらったとき勝手に叩き直してリトライしてくれる。
+#### example.py
 
-## プロフィール / 残高
+```py
+from pypaypay import PayPay
 
-```python
+# ① 電話番号＋パスワードで初回ログイン
+paypay = PayPay("080-1234-5678", "Gay1919")   # ハイフンはあってもなくてもいい
+url = paypay.login()                            # ブラウザで開く URL が返ってくる
+print("これ開いて:", url)
+paypay.login_confirm(input("URL?: "))           # コールバック URL そのままでも AB-0000 みたいなのだけでも OK
+
+print(paypay.access_token)      # 90日有効、これを保存しろ
+print(paypay.refresh_token)     # これも保存しろ、こっちの方が大事まである
+print(paypay.device_uuid)       # 登録デバイス管理用、次回これ渡すと URL 入力を省ける
+print(paypay.client_uuid)       # 特に気にしなくていい、ランダムでいいらしい
+
+# ② 2回目以降はトークンぶち込んでログイン作業まるごとスキップ
+paypay = PayPay(access_token="トークン", refresh_token="リフレッシュ")
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# プロフィールと残高
 me = paypay.get_profile()
-print(me.name)                # ユーザー名
-print(me.external_user_id)    # 内部 ID(PayPayID とは別物)
-print(me.icon)                # アイコン URL
+print(me.name)                  # ユーザー名
+print(me.external_user_id)      # 識別用の内部 ID、自分で決めた PayPayID とは別物
+print(me.icon)                  # アイコンの URL
 
 bal = paypay.get_balance()
-print(bal.all_balance)        # ぜんぶ
-print(bal.useable_balance)    # 使える分
-print(bal.money_light)        # マネーライト
-print(bal.money)              # マネー
-print(bal.points)             # ポイント
-```
+print(bal.all_balance)          # ぜんぶ
+print(bal.useable_balance)      # 使える分（ポイント抜き）
+print(bal.money_light, bal.money, bal.points)   # ライト / マネー / ポイント
 
-## 履歴 / チャット / 通知
-
-```python
-paypay.get_history(size=20)                                       # 支出入履歴
-paypay.get_chat_rooms(size=20)                                    # PayPay 内 DM 一覧
-paypay.get_chat_room_messages(chat_room_id="sendbird_group_channel_xxx_yyy")
-# ↑ "sendbird_group_channel_" は付けても付けなくても OK
+# 履歴とか DM 一覧とか
+paypay.get_history(size=20)                     # 支出入の履歴、size は控えめでいい
+paypay.get_chat_rooms(size=20)                  # PayPay 内 DM 一覧
+paypay.get_chat_room_messages("sendbird_group_channel_なんとか_なんとか")
+# ↑ "sendbird_group_channel_" は付けても付けなくても OK、そこは優しい
 paypay.get_point_history()
-```
 
-## 送金リンク
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 送金リンク、みんなこれ目当てでしょ
+link = paypay.link_check("https://pay.paypay.ne.jp/Zk8mQ2vR7pL4xN3d")  # ID だけでも OK
+print(link.amount)              # 合計金額
+print(link.money_light, link.money)             # 内訳
+print(link.has_password)        # True ならパスワード必須
+print(link.chat_room_id)        # 受け取ったあとお礼 DM 送るやつ
+print(link.status)              # PENDING / COMPLETED / REJECTED / FAILED
+print(link.order_id)
+print(link.sender_external_id)  # 送ってきた人の ExternalID
 
-一番よく使うやつ。
+paypay.link_receive("URL / ID どっちでもOK", "必要ならパスワード 1919", link_info=link)
+# ↑ link_info を渡すとリンクチェックをスキップするので速い、連打する人は必ず渡せ
+paypay.link_reject("URL / ID どっちでもOK", link_info=link)   # 辞退
+paypay.link_cancel("URL / ID どっちでもOK", link_info=link)   # 自分が送ったやつの取り消し
 
-```python
-# 情報だけ見る(web=True で公開 API 経由)
-info = paypay.link_check("https://pay.paypay.ne.jp/KT975hvzbH1EulTr")
-print(info.amount)         # 合計金額
-print(info.money_light)    # ライト分
-print(info.money)          # マネー分
-print(info.has_password)   # True ならパスワード必須
-print(info.chat_room_id)   # 受取後にメッセ送るあれ
-print(info.status)         # PENDING / COMPLEATED / REJECTED / FAILED
-print(info.order_id)
-
-# 受取
-paypay.link_receive("URLでもIDでも", "パスワード必要なら 4602", link_info=info)
-# ↑ link_info を渡すと再チェックしないので速い
-
-paypay.link_reject("URLでもIDでも", link_info=info)   # 辞退
-paypay.link_cancel("URLでもIDでも", link_info=info)   # 自分が送ったやつ取消(やっと出来るようになった)
-
-# 発行
-create_link = paypay.create_link(amount=100, passcode="4602")
-print(create_link.link)          # URL
-print(create_link.chat_room_id)  # 発行時に付くチャットルーム
+# リンク発行
+created = paypay.create_link(amount=100, passcode="1919")
+print(created.link)             # ↑で作った URL
+print(created.chat_room_id)     # ↑で作ったリンクのチャットルーム ID
+print(created.order_id)
 
 # 自分宛て入金 QR
-qr = paypay.create_p2pcode()             # 金額指定するなら amount=int
+qr = paypay.create_p2pcode()    # amount=int で金額固定も出来る
 print(qr.p2pcode)
-```
 
-## 直接送金 / DM
-
-リンクじゃなく相手 ID を直接指定する版。
-
-```python
-send = paypay.send_money(amount=100, receiver_id="受取人のexternal_user_id")
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 直接送金と DM
+send = paypay.send_money(amount=100, receiver_id="友達の external_user_id")
 print(send.chat_room_id)
+paypay.send_message(send.chat_room_id, "はい100円")
+# ここにテンプレ文を流し込めば受け取り連絡が完全自動になる
 
-paypay.send_message(chat_room_id="DMのID", message="100円くれてありがとう!")
-# 商用ならここに「お買い上げありがとうございます」的なテンプレを流し込むと捗る
+paypay.set_money_priority(paypay_money=False)   # False=ライト優先 / True=マネー優先
 
-paypay.set_money_priority(paypay_money=False)   # False=マネーライト優先 / True=マネー優先
-```
+# ユーザー検索 → チャットルーム
+user = paypay.search_p2puser("amane1201")                    # PayPayID でグローバル検索
+user = paypay.search_p2puser("あまね", is_global=False, order=0)  # フレンドなら表示名でも
+print(user.name, user.icon, user.external_user_id)
+room = paypay.initialize_chatroom(user.external_user_id)
+paypay.send_message(room.chatroom_id, "テスト")
 
-## ユーザー検索 / チャット初期化
-
-```python
-# PayPayID でグローバル検索(すぐレート制限に入るので連打注意)
-u = paypay.search_p2puser(user_id="ユーザーID")
-print(u.name, u.icon, u.external_user_id)
-
-# フレンド内なら表示名でも探せる。同名がいたら order で n 番目を取る
-u = paypay.search_p2puser(user_id="表示名", is_global=False, order=0)
-print(u.icon, u.external_user_id)
-
-# ExternalID から DM 用チャットルームを取得
-room = paypay.initialize_chatroom("ExternalID")
-print(room.chatroom_id)
-```
-
-## 加盟店 QR / 出金
-
-```python
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 加盟店 QR と出金
 info = paypay.get_barcode_info("https://qr.paypay.ne.jp/............")
-print(info.amount)             # 金額指定なしの請求リンクだと None
-print(info.external_user_id)   # send_money の receiver_id に流用できる
+print(info.amount)              # 金額指定なしの請求リンクだと None
+print(info.merchant_name)
+print(info.external_user_id)    # send_money の receiver_id に流用できる
 
-paypay.pay_qr_code(url)                # QR 決済実行
-paypay.cashout_to_paypaybank(100)      # PayPay 銀行へ出金
+paypay.pay_qr_code("https://qr.paypay.ne.jp/............")   # amount=int で金額指定も
+paypay.cashout_to_paypaybank(100)                           # PayPay 銀行へ出金
 ```
 
-## 全 API 網羅 — `pp.raw`
+長いけど使い方はコメントに全部書いといたから、ここだけ読めばだいたい動かせる。
 
-高レベルに無いエンドポイントも **192 個全部** `paypay.raw.<method>` で呼べる。パラメータ名は decompile 済のソースから自動抽出したやつが keyword-only で並ぶので IDE 補完が効く。
+### dict 探し地獄からの卒業
 
-```python
+返り値は全部 `dict` のサブクラス。よく使うやつは `.属性` で取れるようにしてあるので、
+`payload["walletSummary"]["usableBalance"]["moneyLight"]["amount"]` みたいな**深すぎる階層をスコップで掘る作業**はもう要らない。
+
+```py
+me = paypay.get_profile()
+me.name          # -> 属性アクセス（欲しいやつはだいたいこれで出る）
+me["nickName"]   # -> dict アクセス（生キー）
+me.raw           # -> {...} フル dict、生で見たい時用
+```
+
+無い属性は例外じゃなく `None` を返すので `if me.icon:` で普通に判定できる。優しい。
+
+## 全部叩ける — `paypay.raw`
+
+高レベルに無いエンドポイントも `paypay.raw.<メソッド名>` で **192 本ぜんぶ**呼べる。
+パラメータ名はデコンパイル済のソースから機械抽出したのがキーワード引数で並ぶので IDE 補完が効く。
+
+```py
 # BFF 系
 paypay.raw.get_user_profile(includeUserScore=True)
 paypay.raw.get_kyc_display_info(requestKycTypes=["IDENTIFICATION"])
@@ -164,93 +174,174 @@ paypay.raw.get_gv_list(statusFilter="ACTIVE", pageSize=20)
 paypay.raw.follow_channel(channelId="xxxx", type="STORE")
 paypay.raw.like_feed(feedId="yyyy")
 
-# P2P 系(グループ機能とか、割り勘とか)
-paypay.raw.create_group_pay(...)
+# P2P 系（グループ機能とか割り勘とか）
+paypay.raw.create_group_pay()
 paypay.raw.get_p2p_friends(pageSize=50)
 paypay.raw.block_user(externalUserId="...")
 
-# 抽出漏れフィールドは **extra で足せる
+# 抽出漏れフィールドは **extra で足せる、アプリが更新されても待たなくていい
 paypay.raw.change_user_profile(nickName="太郎", **{"someNewField": True})
 ```
 
-全メソッド一覧が欲しかったら:
-```bash
-python -c "from paypy.raw import RawAPI; print('\n'.join(sorted(m for m in dir(RawAPI) if not m.startswith('_'))))"
+全メソッド一覧が欲しかったら：
+
+```py
+python -c "from pypaypay.raw import RawAPI; print('\n'.join(sorted(m for m in dir(RawAPI) if not m.startswith('_'))))"
 ```
 
-## レスポンスの触り方
+`help(paypay.raw.get_gv_list)` すれば元のエンドポイントが docstring に書いてある。迷ったら叩け。
 
-戻り値は全部 `dict` のサブクラス。`.attr` でも `["key"]` でも読めるし、生 dict は `.raw` で拾える。
+## もう少し詳しく
 
-```python
-me = paypay.get_profile()
-me.name          # -> 属性アクセス
-me["nickName"]   # -> dict アクセス(生キー)
-me.raw           # -> {...} フル dict
+### ログインのやり方いろいろ
+
+```py
+# ① 電話番号＋パスワード（一番普通、ワンタイム URL を踏む）
+paypay = PayPay("080-1234-5678", "Gay1919")
+paypay.login_confirm(input(paypay.login() + " ← 開いて、戻ってきた URL: "))
+
+# ② 登録済みデバイス UUID がある（URL 入力を省ける）
+paypay = PayPay("080-1234-5678", "Gay1919", "登録済みのデバイスUUID", proxy=None)
+paypay.login()
+
+# ③ トークンだけ持ってる（ログイン作業まるごとスキップ）
+paypay = PayPay(access_token="...", refresh_token="...")
+
+# 手動でリフレッシュしたい時はこれ
+paypay.token_refresh("ここにリフレッシュトークン")
+print(paypay.access_token)   # ← 更新後のやつが入ってる
+print(paypay.refresh_token)
 ```
 
-無い属性は例外じゃなく `None` を返すので `if me.icon:` で普通に判定できる。
+`refresh_token` を渡してあると **401 が来たら勝手に叩き直してリトライしてくれる**ので、初回だけ通せば長期間放置できる。えらい。
 
-## 例外
+1アカウント分の身分証は 電話番号 / パスワード / Device_UUID / Client_UUID / アクセストークン / リフレッシュトークン の6点セット。
+このうち実際に握っとくべきなのは**アクセストークンとリフレッシュトークンと Device_UUID** の3つで、DB に書き込むならこの3つ。
+アクセストークンは **90日** 有効なので、一度通せばしばらく忘れてても動いてる。
+
+###### 電話番号のハイフンはあってもなくても OK
+クライアント UUID は常にランダムでいいみたい。アクセストークンをぶち込んでる場合はデバイス UUID もランダムでいいみたい。適当。
+
+### 設定いろいろ
+
+```py
+paypay = PayPay(
+    access_token="...",
+    proxy="127.0.0.1:8888",   # str なら http:// は省略可、dict でもいける
+    timeout=20,
+    sandbox=False,            # True で stg 環境に向く（使う機会たぶん無い）
+)
+```
+
+### PayPay の DM
+
+送金・受け取り履歴のところに生えてるチャット。取引で絡んだ相手にだけ喋れる仕様。
+リンクチェックすると DM 送信用のチャットルーム ID が付いてくるので、受け取ったら勝手にお礼を投げる、みたいなのが組める。
+納品物の詳細を流すもよし、雑に一言だけ返すもよし。無言で回収するより印象は良い。
+
+ID は `sendbird_group_channel_なんとか_なんとか` の形式だけど、`send_message` に渡す時は `sendbird_group_channel_` の部分は無くても OK。
+
+#### もう少し効率化
+
+チャットルーム ID がリンクチェック時しか貰えないのはつらいけど、検索と組み合わせれば何とかなる：
+
+```py
+user = paypay.search_p2puser("amane1201")                 # PayPayID で検索
+room = paypay.initialize_chatroom(user.external_user_id) # チャットルーム ID を取得
+paypay.send_message(room.chatroom_id, "テスト")           # 送信
+```
+
+表示名で探す場合は `is_global=False`（表示名検索はフレンドしか出てこない）。
+逆にフレンド検索に PayPayID は使えない（NotFound が返る）。統一しろ。
+
+ただし**ユーザー ID 検索はすぐレート制限に入る**ので、連打前提の運用には向かない。基本はリンク受け取り時に降ってくる ID を使って、検索は最後の手段くらいの気持ちで。
+
+#### もちろん DM じゃなく直接送金も出来る
+
+```py
+user = paypay.search_p2puser("あまね")
+paypay.send_money(100, user.external_user_id)
+```
+
+送金は ExternalID だけで済むので、DM より簡単。金だけ投げるのは簡単ってコト。
+
+## エラー
+
+失敗したら例外が飛ぶ。種類で分けて掴まえられるよ：
+
+```py
+from pypaypay import APIError, TokenExpiredError, RateLimitedError, LinkAlreadyClaimed
+
+try:
+    paypay.link_receive("Zk8mQ2vR7pL4xN3d")
+except LinkAlreadyClaimed:
+    print("誰かに先を越された")
+except RateLimitedError:
+    print("落ち着け")
+except TokenExpiredError:
+    print("トークン死んだ、refresh して")
+except APIError as e:
+    print("なんか失敗:", e.status, e.code, e.payload)
+```
 
 ```
 PayPayError
 ├── AuthError
-│   └── TokenExpiredError          # 401 / トークン失効
+│   └── TokenExpiredError          # 401 / トークン失効 / S0001
 ├── APIError                       # BFF が resultCode != S0000
 │   ├── .status                    #   HTTP ステータス
-│   ├── .code                      #   BFF resultCode
-│   └── .payload                   #   レスポンス全文
+│   ├── .code                      #   BFF の resultCode
+│   └── .payload                   #   レスポンス全文（困ったらこれ print）
 ├── RateLimitedError               # 429
 ├── LinkPasscodeRequired           # 受取パスコード必須
-└── LinkAlreadyClaimed             # 受取/拒否済み
+└── LinkAlreadyClaimed             # 受取 / 拒否済み
 ```
+
+処理済みのリンクや無効なリンクを触るとちゃんとエラーにしてあるので、握りつぶさず判別に使って。
 
 ## トークンをどう手に入れるか
 
-`login()` → `login_confirm()` を通せば普通に取れる。それが面倒なら:
-- **mitmproxy 派**: PayPay アプリのログイン通信を横取りして `bff/v2/oauth2/token` のレスポンスから抜く
-- **API 手組み派**: `paypay.raw.oauth2_par(...)` → SMS OTP → `paypay.raw.oauth2_token(...)` を自前で組む(PKCE 必要)
+`login()` → `login_confirm()` で普通に取れる。それが面倒なら：
 
-`refresh_token` さえ生きてれば以後は自動更新なので、初回だけ通せば長期間放置できる。
+- **mitmproxy 派**：PayPay アプリのログイン通信を横取りして `bff/v2/oauth2/token` のレスポンスから抜く
+- **API 手組み派**：`paypay.raw.oauth2_par(...)` → SMS OTP → `paypay.raw.oauth2_token(...)` を自前で組む（PKCE 必要）
 
-## アプリのバージョンが変わったら
+どの道 `refresh_token` さえ生きてれば以後は自動更新なので、初回さえ突破すれば勝ち。
 
-新しい APK を jadx でデコンパイルしたあと:
+## 余談：どうやって作ったか
 
-```bash
-py -3 scripts/extract_endpoints.py       # BFFImpl から endpoint→param 抽出
-py -3 scripts/codegen.py                 # paypy/raw.py を再生成
+APK を [JADX](https://github.com/skylot/jadx) でデコンパイルして、ひたすら読んだ。
+
+- `HeaderInterceptor` 相当のところ → 送ってるヘッダー、`Client-UUID` / `Device-UUID` / `Client-OS-Version` の作り方が丸見えだった
+- BFF の実装クラス（難読化後は `C19344p` みたいな味気ない名前）→ **192 本のエンドポイントとパラメータ名が全部そこ**にあった
+- OAuth2 の client_id は本番用と sandbox 用が定数で埋まってた、いいのそれで
+
+難読化でメソッド名は潰れてるけどエンドポイント文字列とフィールド名は生で残ってるので、そこを正規表現でさらって `pypaypay/raw.py` を自動生成してる。機械生成なのでメソッド名がちょっとダサいのは勘弁。
+
+アプリのバージョンが変わったら、新しい APK をデコンパイルして：
+
+```py
+py -3 scripts/extract_endpoints.py       # BFFImpl から endpoint → param 抽出
+py -3 scripts/codegen.py                 # pypaypay/raw.py を再生成
 ```
 
-デフォルトパスは `../../jadx_out/sources/.../C19344p.java` を仮定。違う場所なら:
-```bash
-PAYPAY_BFF_SRC=/path/to/BFFImpl.java py -3 scripts/extract_endpoints.py
-```
+パスが違うなら `PAYPAY_BFF_SRC=/path/to/BFFImpl.java` を頭に付けて。
+デコンパイルしたのは jp.ne.paypay 5.49.0 (Android)、User-Agent もそれに合わせてある。
 
-## 公開する側の人向け
+## さらに余談
 
-GitHub に push すれば `pip install git+https://github.com/<owner>/paypy` が **その時点で使える**。追加作業なし。特定バージョンを固定したいときはタグを切る:
+なんで pypaypay なの？って思った？実は深い理由が……無い。py + PayPay で pypaypay、以上。
+本当は `paypy` にしたかったんだけど、PyPI の `paypy` は 2012年で時が止まってる別人の遺跡が居座ってて取れなかった。14年前の決済ゲートウェイに負けた。
+読み方は「ペイパイ」でも「ペイピー」でも好きにしてくれ。作者も日によって変わる。
 
-```bash
-git tag v0.2.0
-git push origin v0.2.0
-# → pip install git+https://github.com/amane1201/paypy@v0.2.0
-```
+あと高レベル API は PayPayOpenPy 互換の名前にしてあるので、乗り換えは import 書き換えるだけでだいたい動く。優しさ。
 
-PyPI (`pip install paypy`) にしたい場合は 1 回だけ手作業:
+## コンタクト / 貢献
 
-```bash
-# 1. アカウント作成 & API トークン発行(pypi.org)
-# 2. ~/.pypirc に token 保存(または twine が env 変数から拾う)
-# 3. ビルド + アップロード
-py -3 -m pip install --upgrade build twine
-py -3 -m build                       # dist/paypy-0.2.0-*.whl と .tar.gz が出る
-py -3 -m twine upload dist/*         # 認証は API token
-```
-
-以後は `pyproject.toml` の `version` を上げて `python -m build && twine upload dist/*` 繰り返すだけ。名前 `paypy` は現時点で PyPI に空き(2026-07-26 確認)、早い者勝ちなので押さえるなら早めに。
+バグとか「このメソッド動かんぞ」は GitHub の Issues に投げて。
+PR も歓迎、エンドポイント追加はスクリプト再生成なので気軽にどうぞ。
 
 ## ライセンス
 
-MIT。ただし PayPay の商標とかサービス自体は当然 PayPay 株式会社(ソフトバンク/LINEヤフー系)のもの。このライブラリは無関係の第三者製。
+MIT — [LICENSE](LICENSE) 見て好きに使っていいよ。
+PayPay の商標とかサービス自体は当然 PayPay 株式会社のもの、このライブラリは無関係の第三者製です。

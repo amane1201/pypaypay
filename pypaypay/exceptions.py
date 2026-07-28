@@ -3,7 +3,7 @@ from typing import Any, Optional
 
 
 class PayPayError(Exception):
-    """Base class for all paypy errors."""
+    """Base class for all pypaypay errors."""
 
 
 class AuthError(PayPayError):

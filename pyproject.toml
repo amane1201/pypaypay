@@ -3,7 +3,7 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "paypy"
+name = "pypaypay"
 version = "0.2.0"
 description = "Unofficial PayPay (jp.ne.paypay) Python API wrapper — full BFF coverage plus a PayPayOpenPy-compatible high-level surface."
 readme = "README.md"
@@ -38,4 +38,4 @@ dev = ["pytest>=8", "pytest-httpx>=0.30"]
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["paypy*"]
+include = ["pypaypay*"]

@@ -1,4 +1,4 @@
-"""Generate paypy/raw.py from endpoints.json.
+"""Generate pypaypay/raw.py from endpoints.json.
 
 Each endpoint becomes a method on RawAPI. The method name is a snake_case
 transform of the last URL segment. Parameters detected from the decompiled
@@ -14,7 +14,7 @@ import re
 from pathlib import Path
 
 SPEC = Path(__file__).parent / "endpoints.json"
-OUT = (Path(__file__).parent / "../paypy/raw.py").resolve()
+OUT = (Path(__file__).parent / "../pypaypay/raw.py").resolve()
 
 # Manually add endpoints that live outside BFFImpl.
 EXTRA = {
@@ -96,7 +96,7 @@ def endpoint_to_method(path: str) -> str:
 
 def render(spec: dict) -> str:
     lines = [
-        '"""Auto-generated raw API surface for paypy.\n\n'
+        '"""Auto-generated raw API surface for pypaypay.\n\n'
         "Every method is a thin wrapper around a single PayPay BFF endpoint.\n"
         "Parameter names come from the decompiled Android app; pass None to omit.\n"
         "Additional fields can be supplied via ``**extra``.\n\n"

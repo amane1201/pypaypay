@@ -1,4 +1,4 @@
-"""Auto-generated raw API surface for paypy.
+"""Auto-generated raw API surface for pypaypay.
 
 Every method is a thin wrapper around a single PayPay BFF endpoint.
 Parameter names come from the decompiled Android app; pass None to omit.

@@ -5,7 +5,7 @@ Set PAYPAY_ACCESS_TOKEN (and optionally PAYPAY_REFRESH_TOKEN) in the env.
 """
 import os
 import json
-from paypy import PayPay
+from pypaypay import PayPay
 
 
 def main() -> None:

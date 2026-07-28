@@ -5,7 +5,7 @@
 import argparse
 import json
 import os
-from paypy import PayPay
+from pypaypay import PayPay
 
 
 def main() -> None:

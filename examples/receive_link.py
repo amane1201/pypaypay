@@ -6,7 +6,7 @@
 import argparse
 import json
 import os
-from paypy import PayPay, LinkPasscodeRequired, LinkAlreadyClaimed
+from pypaypay import PayPay, LinkPasscodeRequired, LinkAlreadyClaimed
 
 
 def main() -> None:
