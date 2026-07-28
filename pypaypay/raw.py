@@ -1133,11 +1133,14 @@ class RawAPI:
         params.update({k: v for k, v in extra.items() if v is not None})
         return self._c._request("GET", 'bff/v2/getBarcodeInfo', params=params)
 
-    def get_p2p_link_info(self, **extra: Any) -> Dict[str, Any]:
-        """``POST bff/v2/getP2PLinkInfo``
+    def get_p2p_link_info(self, *, verificationCode: Optional[Any] = None, **extra: Any) -> Dict[str, Any]:
+        """``GET bff/v2/getP2PLinkInfo``
+                Query: verificationCode
         """
-        body: Dict[str, Any] = dict(extra)
-        return self._c._request("POST", 'bff/v2/getP2PLinkInfo', json=body)
+        params: Dict[str, Any] = {}
+        if verificationCode is not None: params['verificationCode'] = verificationCode
+        params.update({k: v for k, v in extra.items() if v is not None})
+        return self._c._request("GET", 'bff/v2/getP2PLinkInfo', params=params)
 
     def get_pay2_balance_history(self, *, lastSequence: Optional[Any] = None, pageSize: Optional[Any] = None, **extra: Any) -> Dict[str, Any]:
         """``GET bff/v2/getPay2BalanceHistory``
@@ -1316,7 +1319,7 @@ class RawAPI:
         body: Dict[str, Any] = dict(extra)
         return self._c._request("POST", 'bff/v3/createPaymentOneTimeCodeForHome', json=body)
 
-    def get_order_by_order_id(self, *, orderId: Optional[Any] = None, orderType: Optional[Any] = None, refundId: Optional[Any] = None, showToastMessage: Optional[Any] = None, productType: Optional[Any] = None, **extra: Any) -> Dict[str, Any]:
+    def get_order_by_order_id_v3(self, *, orderId: Optional[Any] = None, orderType: Optional[Any] = None, refundId: Optional[Any] = None, showToastMessage: Optional[Any] = None, productType: Optional[Any] = None, **extra: Any) -> Dict[str, Any]:
         """``GET bff/v3/getOrderByOrderId``
                 Query: orderId, orderType, refundId, showToastMessage, productType
         """

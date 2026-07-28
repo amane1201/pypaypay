@@ -1,7 +1,7 @@
 # pypaypay
 
 PayPay の非公式 Python API ラッパーだよ
-**高レベル 28 メソッド / raw 192 エンドポイント** — アプリで出来ることはだいたい出来ると思う。
+**高レベル 28 メソッド / raw 193 エンドポイント** — アプリで出来ることはだいたい出来ると思う。
 
 ## インストール
 
@@ -61,7 +61,7 @@ from pypaypay import PayPay
 
 # ① 電話番号＋パスワードで初回ログイン
 paypay = PayPay("080-1234-5678", "Gay1919")   # ハイフンはあってもなくてもいい
-url = paypay.login()                            # ブラウザで開く URL が返ってくる
+url = paypay.login()                            # ブラウザで開く URL が返ってくる（約60秒で失効、すぐ開け）
 print("これ開いて:", url)
 paypay.login_confirm(input("URL?: "))           # コールバック URL そのままでも AB-0000 みたいなのだけでも OK
 
@@ -163,7 +163,7 @@ me.raw           # -> {...} フル dict、生で見たい時用
 
 ## 全部叩ける — `paypay.raw`
 
-高レベルに無いエンドポイントも `paypay.raw.<メソッド名>` で **192 本ぜんぶ**呼べる。
+高レベルに無いエンドポイントも `paypay.raw.<メソッド名>` で **193 本ぜんぶ**呼べる。
 パラメータ名はデコンパイル済のソースから機械抽出したのがキーワード引数で並ぶので IDE 補完が効く。
 
 ```py
@@ -192,6 +192,49 @@ python -c "from pypaypay.raw import RawAPI; print('\n'.join(sorted(m for m in di
 `help(paypay.raw.get_gv_list)` すれば元のエンドポイントが docstring に書いてある。迷ったら叩け。
 
 ## もう少し詳しく
+
+### ログインは2系統ある
+
+PayPay には API が2つあって、ログインの通し方も別。
+
+| | Web 版 | BFF |
+|---|---|---|
+| ホスト | `www.paypay.ne.jp/app` | `app4.paypay.ne.jp` |
+| ログイン | **メアパス → OTP を入力** | PAR → ブラウザのポータル → callback URL |
+| 認証 | `Cookie: token=...` | `Authorization: Bearer ...` |
+| クラス | `WebPayPay` | `PayPay` |
+| 出来ること | 残高・履歴・リンク受取など一部 | 高レベル 28 + raw 193 ぜんぶ |
+
+高レベル API 28 メソッドと `raw` 193 本は **BFF 向け**。アプリ 5.x がログイン画面を
+Web ポータルに丸投げした結果、BFF 側には OTP を検証するエンドポイントがもう無い。
+そして **OTP で取れるのは Web 版のトークンで、BFF では通らない**（実機で確認済み）。
+つまり「OTP でログインしたい」なら、使えるのは Web 版で叩ける範囲に限られる。
+
+### OTP でログインする（`WebPayPay`）
+
+```py
+from pypaypay import WebPayPay
+
+paypay = WebPayPay("08012345678", "パスワード")
+if paypay.login()["otp_required"]:     # ここで SMS / メールに OTP が飛ぶ
+    paypay.login_otp(input("OTP: "))   # 届かなければ paypay.resend_otp()
+
+print(paypay.access_token)
+print(paypay.get_balance().all_balance)
+```
+
+`WebPayPay` で使えるのはこれだけ。メソッド名と戻り値は `PayPay` と揃えてあるので、
+この範囲なら書き換えずに差し替えられる。
+
+| 使える | 使えない（Web 版 API に無い） |
+|---|---|
+| `get_profile` `get_balance` `get_history` | `create_link`（リンク発行） |
+| `link_check` `link_receive` `link_reject` | `send_money` `send_message` |
+| `create_p2pcode` `create_paymentcode` | `link_cancel` `search_p2puser` ほか |
+
+使えない方を呼ぶと通信せずに `APIError(E_WEB_UNSUPPORTED)` で止まる。
+**リンク発行や直接送金がしたいなら BFF のトークンが要る**ので、`PayPay.login()` の
+ブラウザ方式（下）で取ること。
 
 ### ログインのやり方いろいろ
 
@@ -308,13 +351,64 @@ PayPayError
 
 どの道 `refresh_token` さえ生きてれば以後は自動更新なので、初回さえ突破すれば勝ち。
 
+## 動作確認
+
+### メアパスを入れるだけ
+
+[scripts/test_everything.py](scripts/test_everything.py) の頭にある `CONFIG` に
+メアド(or 電話番号)とパスワードを書いて、実行するだけ。
+
+```py
+py -3 scripts/test_everything.py
+```
+
+1. ログイン（**メアパス → OTP が届く → 打ち込む**、ブラウザは開かない）
+2. 取れたトークンを `paypay_session.json` に保存（次回以降はログイン不要）
+3. 読み取り系ぜんぶ（プロフィール / 残高 / 履歴 / DM / 検索 / リンク解析）
+4. 1円の送金リンクを作って → 解析 → DM → キャンセル（お金は戻る、`CONFIG["write"]` で切れる）
+
+OTP で取れるのは Web 版のトークンなので、ログイン直後に
+**そのトークンが BFF 側でも通るか**をプローブして表示する。通らなければ Web 版で
+叩ける範囲だけ確認する。全部やりたいなら `--browser-login` で BFF 側の PAR フロー
+（ブラウザで通して callback URL を貼る）に切り替え。
+
+`CONFIG` を空にしておけば環境変数 `PAYPAY_ID` / `PAYPAY_PASSWORD` から読むので、
+パスワードをファイルに残さずに済む。`paypay_session.json` は `.gitignore` 済み。
+
+```py
+py -3 scripts/test_everything.py --receive        # CONFIG["link"] を実際に受け取る
+py -3 scripts/test_everything.py --no-write       # お金が動くやつを飛ばす
+py -3 scripts/test_everything.py --relogin        # 保存済みトークンを捨ててやり直す
+py -3 scripts/test_everything.py --browser-login  # BFF 側のトークンを取りに行く
+```
+
+受け取りは取り消せないので `--receive`（か `CONFIG["receive"]=True`）が要る。
+実行前に金額と送り主を出して確認を取る。
+
+### トークンだけ持ってる場合
+
+```py
+# 読み取りだけ（残高・履歴・プロフィール・リンク解析）
+py -3 scripts/live_check.py --token <アクセストークン>
+
+# リンク解析とユーザー検索も一緒に
+py -3 scripts/live_check.py --token <AT> --link <送金リンク> --user-id <PayPayID>
+
+# 1円の送金リンクを作って→解析して→チャット送って→キャンセル（お金は戻る）
+py -3 scripts/live_check.py --token <AT> --write --amount 1
+```
+
+お金が動くのは `--write` を付けて確認プロンプトに yes と答えたときだけ。
+`pay_qr_code` / `send_money` / `cashout_to_paypaybank` は相手か店舗が必要で
+取り消せないので、自動確認からは外してある。
+
 ## 余談：どうやって作ったか
 
 APK を [JADX](https://github.com/skylot/jadx) でデコンパイルして、ひたすら読んだ。
 
 - `HeaderInterceptor` 相当のところ → 送ってるヘッダー、`Client-UUID` / `Device-UUID` / `Client-OS-Version` の作り方が丸見えだった
 - BFF の実装クラス（難読化後は `C19344p` みたいな味気ない名前）→ **192 本のエンドポイントとパラメータ名が全部そこ**にあった
-- OAuth2 の client_id は本番用と sandbox 用が定数で埋まってた、いいのそれで
+- OAuth2 の client_id は本番用と sandbox 用が定数で埋まってた、いいの？それで
 
 難読化でメソッド名は潰れてるけどエンドポイント文字列とフィールド名は生で残ってるので、そこを正規表現でさらって `pypaypay/raw.py` を自動生成してる。機械生成なのでメソッド名がちょっとダサいのは勘弁。
 

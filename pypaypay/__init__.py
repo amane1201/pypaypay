@@ -1,4 +1,5 @@
 from .client import PayPay
+from .web import WebLogin, WebPayPay
 from .exceptions import (
     PayPayError,
     AuthError,
@@ -23,6 +24,8 @@ from .responses import (
 
 __all__ = [
     "PayPay",
+    "WebLogin",
+    "WebPayPay",
     "PayPayError",
     "AuthError",
     "TokenExpiredError",
@@ -42,4 +45,4 @@ __all__ = [
     "SendMoney",
 ]
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"

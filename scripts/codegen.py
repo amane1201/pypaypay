@@ -16,8 +16,17 @@ from pathlib import Path
 SPEC = Path(__file__).parent / "endpoints.json"
 OUT = (Path(__file__).parent / "../pypaypay/raw.py").resolve()
 
-# Manually add endpoints that live outside BFFImpl.
+# Manually add endpoints that live outside BFFImpl, plus corrections for
+# entries the extractor got wrong (EXTRA wins over endpoints.json).
 EXTRA = {
+    # getP2PLinkInfo is GET + query string; POST answers 400 C0002
+    # "Invalid request method" (verified against app4.paypay.ne.jp, 2026-07).
+    "bff/v2/getP2PLinkInfo": {
+        "method": "GET",
+        "body": [],
+        "query": ["verificationCode"],
+        "dto": None,
+    },
     # oauth2/refresh — io1/C14933n.java
     "bff/v2/oauth2/refresh": {
         "method": "POST",
@@ -80,6 +89,12 @@ def camel_to_snake(name: str) -> str:
     return re.sub(r"__+", "_", s)
 
 
+def _path_version(path: str) -> int:
+    """'bff/v3/getOrderByOrderId' -> 3; 0 when the path carries no version."""
+    m = re.search(r"/v([0-9]+)/", path)
+    return int(m.group(1)) if m else 0
+
+
 def endpoint_to_method(path: str) -> str:
     # "bff/v1/acceptP2PSendMoney" -> "accept_p2p_send_money"
     # "bff/v2/oauth2/token/exchange" -> "oauth2_token_exchange"
@@ -119,8 +134,9 @@ def render(spec: dict) -> str:
     ]
 
     all_spec = {**spec, **EXTRA}
-    # Detect name collisions (v1 vs v2 endpoints with the same tail) and
-    # suffix the v2 method with _v2 to keep both callable.
+    # Detect name collisions (same tail on several API versions). The lowest
+    # version keeps the plain name; the others get a _vN suffix so every
+    # endpoint stays callable.
     name_counts: dict = {}
     for path in all_spec:
         name_counts.setdefault(endpoint_to_method(path), []).append(path)
@@ -128,9 +144,9 @@ def render(spec: dict) -> str:
     for name, paths in name_counts.items():
         if len(paths) < 2:
             continue
-        for p in paths:
-            if "/v2/" in p:
-                renamed[p] = name + "_v2"
+        versioned = sorted(paths, key=lambda p: _path_version(p))
+        for p in versioned[1:]:
+            renamed[p] = f"{name}_v{_path_version(p)}"
 
     for path, s in sorted(all_spec.items()):
         method = s["method"]
@@ -208,7 +224,7 @@ def main() -> None:
     spec = json.loads(SPEC.read_text(encoding="utf-8"))
     code = render(spec)
     OUT.write_text(code, encoding="utf-8")
-    total = len(spec) + len(EXTRA)
+    total = len({**spec, **EXTRA})
     print(f"wrote {OUT} with {total} generated methods")
 
 

@@ -10,20 +10,15 @@ from urllib.parse import parse_qs, urlparse
 import httpx
 
 from .auth import Tokens, REGULAR_MODE_CLIENT_ID, SANDBOX_MODE_CLIENT_ID
-from .exceptions import (
-    APIError,
-    AuthError,
-    LinkAlreadyClaimed,
-    LinkPasscodeRequired,
-    RateLimitedError,
-    TokenExpiredError,
-)
+from .exceptions import APIError, AuthError
 from .headers import build_headers, new_uuid, DEFAULT_APP_VERSION, DEFAULT_OS_VERSION
+from .parsing import parse_envelope
 from .raw import RawAPI
 from .responses import (
     AttrDict, Balance, BarcodeInfo, Chatroom, CreateLink, LinkInfo,
     P2PCode, Profile, SearchUser, SendMoney,
 )
+from .web import WebLogin
 
 
 PROD_BASE_URL = "https://app4.paypay.ne.jp"
@@ -37,6 +32,32 @@ _LINK_CODE_RE = re.compile(r"([A-Za-z0-9_-]{10,})/?$")
 _TK_ID_RE = re.compile(r"(TK[A-Za-z0-9_-]+)")
 # Sendbird channel id fragment
 _SENDBIRD_CHANNEL_RE = re.compile(r"(sendbird_group_channel_[A-Za-z0-9_-]+)")
+
+FORM_URLENCODED = "application/x-www-form-urlencoded"
+# The OAuth2 endpoints reject `application/json` with
+# 400 C0001 "Malformed header value. [Content-Type : ...]"; they only accept
+# form-urlencoded bodies (verified against app4.paypay.ne.jp, 2026-07).
+FORM_PATHS = frozenset({
+    "bff/v2/oauth2/par",
+    "bff/v2/oauth2/token",
+    "bff/v2/oauth2/refresh",
+})
+
+
+def _needs_form(path: str) -> bool:
+    """True for the endpoints verified to need form encoding — exact match, so
+    e.g. ``bff/v2/oauth2/token/exchange`` keeps sending JSON."""
+    return path.lstrip("/").rstrip("/") in FORM_PATHS
+
+
+def _form_body(body: Optional[Dict[str, Any]]) -> Dict[str, str]:
+    """Flatten a JSON-ish body to form fields (None dropped, bools lowercased)."""
+    out: Dict[str, str] = {}
+    for k, v in (body or {}).items():
+        if v is None:
+            continue
+        out[k] = "true" if v is True else "false" if v is False else str(v)
+    return out
 
 
 def _pkce_pair() -> tuple[str, str]:
@@ -98,6 +119,10 @@ class PayPay:
         self._pkce_challenge: Optional[str] = None
         self._auth_state: Optional[str] = None
         self._request_uri: Optional[str] = None  # from oauth2/par
+        self._request_uri_expires_in: Optional[int] = None
+        self._web_login: Optional[WebLogin] = None
+        #: True なら Web 版 API 由来のトークン（otp_login 経由）
+        self.web_token = False
 
         #: 1:1 wrapper for every discovered BFF endpoint.
         self.raw = RawAPI(self)
@@ -134,7 +159,8 @@ class PayPay:
             # dict, just pick the http entry.
             return proxy.get("all") or proxy.get("http") or proxy.get("https")
         s = proxy
-        if s and not re.match(r"^[a-z]+://", s):
+        # Scheme may contain digits ("socks5://"), so don't use [a-z]+ here.
+        if s and not re.match(r"^[a-z][a-z0-9+.-]*://", s, re.I):
             s = "http://" + s
         return s
 
@@ -159,12 +185,19 @@ class PayPay:
         _retry_on_401: bool = True,
         _with_auth: bool = True,
     ) -> Dict[str, Any]:
+        headers = self._headers(with_auth=_with_auth)
+        if _needs_form(path):
+            headers["Content-Type"] = FORM_URLENCODED
+            kwargs: Dict[str, Any] = {"data": _form_body(json)}
+        else:
+            kwargs = {"json": json}
+
         resp = self._http.request(
             method,
             self._url(path),
-            headers=self._headers(with_auth=_with_auth),
-            json=json,
+            headers=headers,
             params=params,
+            **kwargs,
         )
         if resp.status_code == 401 and _retry_on_401 and self.tokens.refresh_token:
             self.token_refresh(self.tokens.refresh_token)
@@ -172,38 +205,7 @@ class PayPay:
                                  _retry_on_401=False, _with_auth=_with_auth)
         return self._parse(resp)
 
-    @staticmethod
-    def _parse(resp: httpx.Response) -> Dict[str, Any]:
-        try:
-            body = resp.json()
-        except ValueError:
-            body = {"raw": resp.text}
-
-        status = resp.status_code
-        if status == 429:
-            raise RateLimitedError("rate limited by PayPay BFF")
-
-        header = body.get("header") if isinstance(body, dict) else None
-        result_code = (header or {}).get("resultCode") if isinstance(header, dict) else None
-        result_msg = (header or {}).get("resultMessage") if isinstance(header, dict) else None
-        lower_msg = (result_msg or "").lower()
-
-        if status == 401:
-            raise TokenExpiredError(result_msg or "access token rejected (401)")
-
-        if status >= 400 or (result_code and result_code != "S0000"):
-            code = result_code or str(status)
-            msg = result_msg or f"HTTP {status}"
-            if code in ("S0001", "S9001") or ("token" in lower_msg and "expire" in lower_msg):
-                raise TokenExpiredError(msg)
-            if "passcode" in lower_msg or code in ("S5001",):
-                raise LinkPasscodeRequired(msg)
-            if "already" in lower_msg or code in ("S5002", "S5003"):
-                raise LinkAlreadyClaimed(msg)
-            raise APIError(msg, status=status, code=code, payload=body)
-
-        payload = body.get("payload") if isinstance(body, dict) else body
-        return payload if isinstance(payload, dict) else {"payload": payload}
+    _parse = staticmethod(parse_envelope)
 
     # ------------------------------------------------------------------
     # OAuth2 / login flow
@@ -213,10 +215,11 @@ class PayPay:
 
         Returns the URL the user should open to complete phone + password + OTP
         verification. After completing it in a browser they get redirected to
-        ``paypay://oauth2/callback?code=...`` — pass that URL (or bare
-        ``TKxxxx`` id) to :meth:`login_confirm`.
+        ``paypay://oauth2/callback?code=...`` — pass that URL (or bare id) to
+        :meth:`login_confirm`.
 
-        Requires ``phone`` in the constructor.
+        The URL expires quickly (``expiresIn`` on the PAR response is ~60s),
+        so open it right away. Requires ``phone`` in the constructor.
         """
         if not self.phone:
             raise AuthError("phone number required to start login()")
@@ -243,18 +246,67 @@ class PayPay:
                                 _with_auth=False, _retry_on_401=False)
         request_uri = payload.get("requestUri") or payload.get("request_uri") or ""
         self._request_uri = request_uri
+        self._request_uri_expires_in = payload.get("expiresIn")
 
-        # The BFF returns something like:
-        #   urn:paypay:oauth2:...:TKabcd1234
-        # or the raw TK id in a `id`/`requestId` field.
-        tk_id = payload.get("id") or payload.get("requestId")
-        if not tk_id:
+        # Current builds return the RFC 9126 URN form:
+        #   urn:ietf:params:oauth:request_uri:<32 chars>
+        # Older ones embedded a TKxxxx id, or exposed it as `id`/`requestId`.
+        auth_id = payload.get("id") or payload.get("requestId")
+        if not auth_id:
             m = _TK_ID_RE.search(request_uri)
-            tk_id = m.group(1) if m else None
-        if not tk_id:
-            raise AuthError(f"oauth2/par response missing TK id: {payload!r}")
+            if m:
+                auth_id = m.group(1)
+            elif ":" in request_uri:
+                auth_id = request_uri.rsplit(":", 1)[-1]
+        if not auth_id:
+            raise AuthError(f"oauth2/par response has no usable id: {payload!r}")
 
-        return f"{LOGIN_PORTAL_BASE}?id={tk_id}"
+        return f"{LOGIN_PORTAL_BASE}?id={auth_id}"
+
+    # ------------------------------------------------------------------
+    # OTP ログイン（Web 版 API）
+    # ------------------------------------------------------------------
+    def otp_login(self) -> Dict[str, Any]:
+        """メアド/電話番号＋パスワードでログインを開始し、OTP を送らせる。
+
+        ブラウザを開かない方の入口。返り値の ``otp_required`` が True なら
+        OTP が届いているので :meth:`otp_confirm` に渡す。False なら
+        ``access_token`` がもう取れていて、こっちで反映済み。
+
+        使うのは Web 版 API (www.paypay.ne.jp/app) で、BFF の PAR フロー
+        （:meth:`login`）とは別系統。
+        """
+        if not self.phone:
+            raise AuthError("phone/mail required to start otp_login()")
+        if not self.password:
+            raise AuthError("password required to start otp_login()")
+
+        self._web_login = WebLogin(self.phone, self.password,
+                                   client_uuid=self.client_uuid, http=self._http)
+        payload = self._web_login.start()
+        if not payload.get("otp_required"):
+            self._apply_web_tokens()
+        return payload
+
+    def otp_confirm(self, otp: str) -> Tokens:
+        """届いた OTP を入れてトークンを確定する。"""
+        if not self._web_login:
+            raise AuthError("call otp_login() before otp_confirm()")
+        self._web_login.verify(otp)
+        return self._apply_web_tokens()
+
+    def otp_resend(self) -> Dict[str, Any]:
+        """OTP が来なかったときに送り直す。"""
+        if not self._web_login:
+            raise AuthError("call otp_login() before otp_resend()")
+        return self._web_login.resend()
+
+    def _apply_web_tokens(self) -> Tokens:
+        web = self._web_login
+        self.tokens = Tokens(access_token=web.access_token or "",
+                             refresh_token=web.refresh_token)
+        self.web_token = True
+        return self.tokens
 
     def login_confirm(self, url_or_code: str) -> Tokens:
         """Exchange the browser-obtained authorization code (or TK id URL)
@@ -289,13 +341,13 @@ class PayPay:
             raise AuthError("no refresh_token available")
         self.tokens.refresh_token = rt
 
-        headers = self._headers(with_auth=False)
-        resp = self._http.post(
-            self._url("bff/v2/oauth2/refresh"),
-            headers=headers,
+        # Goes through _request so the form-urlencoded rule for oauth2 paths
+        # applies here too.
+        payload = self._request(
+            "POST", "bff/v2/oauth2/refresh",
             json={"clientId": self.oauth_client_id, "refreshToken": rt},
+            _with_auth=False, _retry_on_401=False,
         )
-        payload = self._parse(resp)
         self.tokens = Tokens.from_response(payload)
         return self.tokens
 
@@ -405,8 +457,9 @@ class PayPay:
             payload = self._request("GET", "p2p/v1/resolveLink",
                                     params={"verificationCode": code})
         else:
-            payload = self._request("POST", "bff/v2/getP2PLinkInfo",
-                                    json={"verificationCode": code})
+            # POST here returns 400 C0002 "Invalid request method".
+            payload = self._request("GET", "bff/v2/getP2PLinkInfo",
+                                    params={"verificationCode": code})
         result = LinkInfo(payload)
         result.setdefault("verificationCode", code)
         return result

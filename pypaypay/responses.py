@@ -45,54 +45,77 @@ class AttrDict(dict):
 
 
 class Profile(AttrDict):
+    """BFF は camelCase、Web 版は snake_case のフラットな形で返してくる。"""
+
     @property
     def name(self) -> Optional[str]:
-        return _first(self, ["nickName", "userProfile.nickName", "displayName"])
+        return _first(self, ["nickName", "userProfile.nickName", "displayName",
+                             "display_name"])
 
     @property
     def external_user_id(self) -> Optional[str]:
-        return _first(self, ["externalUserId", "userProfile.externalUserId"])
+        return _first(self, ["externalUserId", "userProfile.externalUserId",
+                             "external_id"])
 
     @property
     def icon(self) -> Optional[str]:
         return _first(self, [
             "avatarImageUrl", "avatarImage.url",
             "userProfile.avatarImage.url", "userProfile.avatarImageUrl",
+            "photo_url",
         ])
+
+    @property
+    def phone(self) -> Optional[str]:
+        """Web 版だけ返してくる電話番号。BFF 側は None。"""
+        return _first(self, ["mobile", "phoneNumber"])
 
 
 class Balance(AttrDict):
+    """BFF と Web 版で階層が違うので、どちらの形でも拾えるようにしてある。"""
+
     @property
     def money(self) -> int:
         return int(_first(self, ["walletSummary.usableBalance.money.amount",
                                  "walletSummary.money.amount",
+                                 "walletDetail.emoneyBalanceInfo.balance",
                                  "money.amount", "moneyAmount"]) or 0)
 
     @property
     def money_light(self) -> int:
         return int(_first(self, ["walletSummary.usableBalance.moneyLight.amount",
                                  "walletSummary.moneyLight.amount",
+                                 "walletDetail.prepaidBalanceInfo.balance",
                                  "moneyLight.amount", "moneyLightAmount"]) or 0)
 
     @property
     def points(self) -> int:
         return int(_first(self, ["walletSummary.usableBalance.point.amount",
                                  "walletSummary.point.amount",
+                                 "walletDetail.cashBackBalanceInfo.balance",
                                  "point.amount", "pointAmount"]) or 0)
 
     @property
     def all_balance(self) -> int:
+        v = _first(self, ["walletSummary.allTotalBalanceInfo.balance"])
+        if v is not None:
+            return int(v)
         return self.money + self.money_light + self.points
 
     @property
     def useable_balance(self) -> int:
         """Sum of money + money_light (points not spendable via P2P)."""
+        v = _first(self, ["walletSummary.usableBalanceInfoWithoutCashback.balance"])
+        if v is not None:
+            return int(v)
         return self.money + self.money_light
 
     usable_balance = useable_balance
 
 
 class LinkInfo(AttrDict):
+    """BFF と Web 版で階層が違うので、どちらの形でも拾えるようにしてある。"""
+
     @property
     def amount(self) -> Optional[int]:
         v = _first(self, ["pendingP2PInfo.amount", "sendMoneyLink.amount",
@@ -102,13 +125,16 @@ class LinkInfo(AttrDict):
     @property
     def money(self) -> Optional[int]:
         v = _first(self, ["pendingP2PInfo.moneyAmount", "sendMoneyLink.moneyAmount",
+                          "message.data.subWalletSplit.senderEmoneyAmount",
                           "moneyAmount"])
         return int(v) if v is not None else None
 
     @property
     def money_light(self) -> Optional[int]:
         v = _first(self, ["pendingP2PInfo.moneyLightAmount",
-                          "sendMoneyLink.moneyLightAmount", "moneyLightAmount"])
+                          "sendMoneyLink.moneyLightAmount",
+                          "message.data.subWalletSplit.senderPrepaidAmount",
+                          "moneyLightAmount"])
         return int(v) if v is not None else None
 
     @property
@@ -121,24 +147,37 @@ class LinkInfo(AttrDict):
     @property
     def chat_room_id(self) -> Optional[str]:
         return _first(self, ["chatRoomId", "sendMoneyLink.chatRoomId",
+                             "message.chatRoomId",
                              "pendingP2PInfo.chatRoomId"])
 
     @property
     def status(self) -> Optional[str]:
         return _first(self, ["orderStatus", "status",
                              "pendingP2PInfo.orderStatus",
+                             "message.data.status",
                              "sendMoneyLink.orderStatus"])
 
     @property
     def order_id(self) -> Optional[str]:
         return _first(self, ["orderId", "pendingP2PInfo.orderId",
+                             "message.data.orderId",
                              "sendMoneyLink.orderId"])
 
     @property
     def sender_external_id(self) -> Optional[str]:
-        return _first(self, ["sender.externalUserId",
+        return _first(self, ["sender.externalUserId", "sender.externalId",
                              "pendingP2PInfo.sender.externalUserId",
                              "senderExternalId"])
+
+    @property
+    def sender_name(self) -> Optional[str]:
+        return _first(self, ["sender.displayName", "sender.nickName",
+                             "pendingP2PInfo.sender.displayName"])
+
+    @property
+    def sender_icon(self) -> Optional[str]:
+        return _first(self, ["sender.photoUrl", "sender.avatarImageUrl",
+                             "pendingP2PInfo.sender.photoUrl"])
 
 
 class CreateLink(AttrDict):

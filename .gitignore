@@ -36,3 +36,6 @@ htmlcov/
 # Local dev
 scratchpad/
 *.log
+
+# scripts/test_everything.py が保存するトークン（絶対にコミットしない）
+paypay_session.json
