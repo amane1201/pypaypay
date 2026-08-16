@@ -39,3 +39,7 @@ scratchpad/
 
 # scripts/test_everything.py が保存するトークン（絶対にコミットしない）
 paypay_session.json
+
+# scripts/catch_callback.py が書き出す認可コード（絶対にコミットしない）
+scripts/.callback.txt
+scripts/.callback.err

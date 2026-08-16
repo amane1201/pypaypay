@@ -62,6 +62,7 @@ from pypaypay import PayPay
 # ① 電話番号＋パスワードで初回ログイン
 paypay = PayPay("080-1234-5678", "Gay1919")   # ハイフンはあってもなくてもいい
 url = paypay.login()                            # ブラウザで開く URL が返ってくる（約60秒で失効、すぐ開け）
+                                                # ※必ず実ブラウザで開くこと（後述: WAF）
 print("これ開いて:", url)
 paypay.login_confirm(input("URL?: "))           # コールバック URL そのままでも AB-0000 みたいなのだけでも OK
 
@@ -223,18 +224,66 @@ print(paypay.access_token)
 print(paypay.get_balance().all_balance)
 ```
 
-`WebPayPay` で使えるのはこれだけ。メソッド名と戻り値は `PayPay` と揃えてあるので、
-この範囲なら書き換えずに差し替えられる。
+メソッド名と戻り値は `PayPay` と揃えてあるので、この範囲なら書き換えずに差し替えられる。
 
-| 使える | 使えない（Web 版 API に無い） |
+### app API — OTP トークンで BFF をほぼ丸ごと（`WebPayPay.raw`）
+
+`www.paypay.ne.jp/app/...` は `app4.paypay.ne.jp/bff/...` と**同じバックエンドへの
+プロキシ**で、Cookie トークン（OTP で取れるやつ）のまま通る。だから `WebPayPay`
+にも `PayPay` と同じ `.raw` を生やしてある。BFF のパスを app 側へ自動変換するので、
+**190 本中 130 本くらいがブラウザ無しで叩ける**。
+
+```py
+paypay = WebPayPay("08012345678", "パスワード")
+if paypay.login()["otp_required"]:
+    paypay.login_otp(input("OTP: "))
+
+paypay.raw.get_user_profile(includeUserScore=True)   # BFF の raw がそのまま使える
+paypay.raw.get_kyc_display_info(requestKycTypes=["IDENTIFICATION"])
+paypay.raw.get_gv_list(statusFilter="ACTIVE", pageSize=20)
+
+paypay.app_call("GET", "getServiceStatus")           # 名前で直接叩く逃げ道
+```
+
+高レベルにも到達可能なやつを一通り生やした：
+
+| 使える（app API に居る） | 使えない |
 |---|---|
-| `get_profile` `get_balance` `get_history` | `create_link`（リンク発行） |
-| `link_check` `link_receive` `link_reject` | `send_money` `send_message` |
-| `create_p2pcode` `create_paymentcode` | `link_cancel` `search_p2puser` ほか |
+| `get_profile` `get_balance` `get_history` | `create_link` / `send_money`（送金系）|
+| `get_payment_methods` `get_payout_info` | `link_cancel`（送金リンク取消）|
+| `pay_qr_code` `get_barcode_info` | `send_message` `search_p2puser`（P2P チャット）|
+| `cashout_to_paypaybank`（PayPay 銀行へ出金）| チャンネル / フィード（`follow_channel` 等）|
+| `link_check` `link_receive` `link_reject` | グループ / 定期送金など P2P ソーシャル系 |
+| `create_p2pcode` `create_paymentcode` | |
 
-使えない方を呼ぶと通信せずに `APIError(E_WEB_UNSUPPORTED)` で止まる。
-**リンク発行や直接送金がしたいなら BFF のトークンが要る**ので、`PayPay.login()` の
-ブラウザ方式（下）で取ること。
+使えない側は**通信する前に**理由付きで止まる（`E_WEB_UNAVAILABLE` = プロキシ未公開 /
+403、`E_WEB_GATED` = ネイティブ署名ヘッダ要求、`E_WEB_UNSUPPORTED` = 高レベルの別名）。
+**送金（リンク発行・直接送金）だけは app プロキシがネイティブアプリの署名ヘッダを
+要求してくる**ので、ここだけは BFF のブラウザ方式トークンが要る。
+
+疎通確認は `py -3 scripts/test_app_api.py --phone 08012345678`（`--raw-sweep` で到達数も数える）。
+
+### BFF のログインで踏む URL
+
+`login()` が返すのは RFC 9126 の認可エンドポイント。
+
+```
+https://www.paypay.ne.jp/portal/api/v2/oauth2/authorize?client_id=pay2-mobile-app-client&request_uri=urn%3Aietf%3Aparams%3Aoauth%3Arequest_uri%3A<32文字>
+```
+
+`oauth2/par` が返す `request_uri` をそのまま渡す仕組みで、踏むと
+`https://www.paypay.ne.jp/portal/oauth2/sign-in` のログイン画面に飛ばされる。
+そこで 電話番号 → パスワード → OTP を通すと `paypay://oauth2/callback?code=...&state=...`
+に戻ってくるので、その URL を `login_confirm()` に渡す。
+
+**必ず実ブラウザで開くこと。** この認可エンドポイントと `/portal/oauth2/sign-in` は
+AWS WAF の JS チャレンジで守られていて、httpx や requests で取りに行くと
+`HTTP 202` ＋ `x-amzn-waf-action: challenge` のチャレンジページしか返ってこない。
+自動化したいなら OTP ログイン（`WebPayPay`）の方を使う。
+
+`code` が返ってこなかった場合（`?error=...`）や `state` が食い違っている場合は
+`login_confirm()` が `AuthError` で落ちるので、その時は `login()` からやり直す。
+URL の寿命は60秒なので、開くのが遅いと `restart_authentication` になる。
 
 ### ログインのやり方いろいろ
 

@@ -5,7 +5,7 @@ import os
 import re
 import secrets
 from typing import Any, Dict, List, Optional, Union
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, urlencode, urlparse
 
 import httpx
 
@@ -23,6 +23,13 @@ from .web import WebLogin
 
 PROD_BASE_URL = "https://app4.paypay.ne.jp"
 SANDBOX_BASE_URL = "https://stg-app4.paypay-corp.co.jp"
+# RFC 9126 authorization endpoint: the browser is sent here with the
+# `request_uri` handed out by oauth2/par, and it redirects into the login SPA
+# (https://www.paypay.ne.jp/portal/oauth2/sign-in).
+LOGIN_AUTHORIZE_URL = "https://www.paypay.ne.jp/portal/api/v2/oauth2/authorize"
+# Legacy entry point. `/portal/oauth2/l` is the portal's OTL (one-time login
+# link) route — it does *not* consume a PAR request_uri, so builds that return
+# a plain `TK...` id are the only ones that belong here.
 LOGIN_PORTAL_BASE = "https://www.paypay.ne.jp/portal/oauth2/l"
 LOGIN_REDIRECT_URI = "paypay://oauth2/callback"
 
@@ -120,6 +127,8 @@ class PayPay:
         self._auth_state: Optional[str] = None
         self._request_uri: Optional[str] = None  # from oauth2/par
         self._request_uri_expires_in: Optional[int] = None
+        #: URL handed back by :meth:`login`, for reference after the fact.
+        self.login_url: Optional[str] = None
         self._web_login: Optional[WebLogin] = None
         #: True なら Web 版 API 由来のトークン（otp_login 経由）
         self.web_token = False
@@ -218,6 +227,10 @@ class PayPay:
         ``paypay://oauth2/callback?code=...`` — pass that URL (or bare id) to
         :meth:`login_confirm`.
 
+        It has to be a real browser: the authorization endpoint sits behind an
+        AWS WAF JS challenge, so fetching it with httpx/requests only gets you
+        the challenge page (HTTP 202, ``x-amzn-waf-action: challenge``).
+
         The URL expires quickly (``expiresIn`` on the PAR response is ~60s),
         so open it right away. Requires ``phone`` in the constructor.
         """
@@ -250,18 +263,26 @@ class PayPay:
 
         # Current builds return the RFC 9126 URN form:
         #   urn:ietf:params:oauth:request_uri:<32 chars>
-        # Older ones embedded a TKxxxx id, or exposed it as `id`/`requestId`.
+        # which the browser hands to the authorization endpoint verbatim.
+        if request_uri:
+            self.login_url = f"{LOGIN_AUTHORIZE_URL}?" + urlencode({
+                "client_id": self.oauth_client_id,
+                "request_uri": request_uri,
+            })
+            return self.login_url
+
+        # Older builds embedded a TKxxxx id, or exposed it as `id`/`requestId`;
+        # those went through the portal's own landing route instead.
         auth_id = payload.get("id") or payload.get("requestId")
         if not auth_id:
-            m = _TK_ID_RE.search(request_uri)
+            m = _TK_ID_RE.search(str(payload))
             if m:
                 auth_id = m.group(1)
-            elif ":" in request_uri:
-                auth_id = request_uri.rsplit(":", 1)[-1]
         if not auth_id:
-            raise AuthError(f"oauth2/par response has no usable id: {payload!r}")
+            raise AuthError(f"oauth2/par response has no requestUri and no usable id: {payload!r}")
 
-        return f"{LOGIN_PORTAL_BASE}?id={auth_id}"
+        self.login_url = f"{LOGIN_PORTAL_BASE}?id={auth_id}"
+        return self.login_url
 
     # ------------------------------------------------------------------
     # OTP ログイン（Web 版 API）
@@ -315,6 +336,7 @@ class PayPay:
         if not self._pkce_verifier:
             raise AuthError("call login() before login_confirm()")
 
+        self._check_state(url_or_code)
         code = self._extract_auth_code(url_or_code)
         body = {
             "clientId": self.oauth_client_id,
@@ -362,6 +384,13 @@ class PayPay:
         if s.startswith(("http://", "https://", "paypay://")):
             parsed = urlparse(s)
             qs = parse_qs(parsed.query)
+            # The portal redirects failures back to the same callback URI with
+            # `?error=...` and no code; say so instead of posting junk.
+            if "error" in qs and "code" not in qs:
+                raise AuthError(
+                    f"authorization failed: {qs['error'][0]}"
+                    + (f" ({qs['error_description'][0]})" if "error_description" in qs else "")
+                )
             for k in ("code", "authorization_code", "id"):
                 if k in qs:
                     return qs[k][0]
@@ -371,6 +400,16 @@ class PayPay:
                 return m.group(1)
         # Bare id / code
         return s
+
+    def _check_state(self, url_or_code: str) -> None:
+        """Reject a callback carrying someone else's ``state`` (CSRF guard)."""
+        if not self._auth_state or not url_or_code.strip().startswith(
+                ("http://", "https://", "paypay://")):
+            return
+        got = parse_qs(urlparse(url_or_code.strip()).query).get("state")
+        if got and got[0] != self._auth_state:
+            raise AuthError("callback `state` does not match the one login() sent — "
+                            "this callback belongs to a different login attempt")
 
     # ------------------------------------------------------------------
     # Profile / balance
